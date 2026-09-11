@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 const PRODUCT_OPTIONS = ['ドリップ', '豆売り', '物販', 'その他'];
@@ -13,7 +13,7 @@ const RECORD_TYPE_MAP = {
 };
 
 const initialState = {
-  staffName: '',
+  staffNames: [],
   recordTypeLabel: 'オペレーション',
   products: [],
   region: null,
@@ -27,6 +27,24 @@ export default function RecordTab({ onSaved }) {
   const [form, setForm] = useState(initialState);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+  const [staffOptions, setStaffOptions] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadStaff() {
+      const { data } = await supabase
+        .from('staff')
+        .select('name, sort_order')
+        .order('sort_order', { ascending: true });
+      if (!cancelled && data) {
+        setStaffOptions(data.map((s) => s.name));
+      }
+    }
+    loadStaff();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const toggleProduct = (product) => {
     setForm((prev) => ({
@@ -37,11 +55,20 @@ export default function RecordTab({ onSaved }) {
     }));
   };
 
+  const toggleStaff = (name) => {
+    setForm((prev) => ({
+      ...prev,
+      staffNames: prev.staffNames.includes(name)
+        ? prev.staffNames.filter((n) => n !== name)
+        : [...prev.staffNames, name],
+    }));
+  };
+
   const setSingle = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: prev[key] === value ? prev[key] : value }));
   };
 
-  const canSubmit = form.staffName.trim().length > 0 && form.reaction && !saving;
+  const canSubmit = form.staffNames.length > 0 && form.reaction && !saving;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,7 +76,7 @@ export default function RecordTab({ onSaved }) {
 
     setSaving(true);
     const { error } = await supabase.from('service_notes').insert({
-      staff_name: form.staffName.trim(),
+      staff_names: form.staffNames,
       record_type: RECORD_TYPE_MAP[form.recordTypeLabel],
       products: form.products,
       region: form.region,
@@ -75,17 +102,23 @@ export default function RecordTab({ onSaved }) {
   return (
     <form className="card" onSubmit={handleSubmit}>
       <div className="field">
-        <label className="field-label" htmlFor="staffName">
-          スタッフ名
-        </label>
-        <input
-          id="staffName"
-          className="text-input"
-          type="text"
-          placeholder="例）田中"
-          value={form.staffName}
-          onChange={(e) => setForm((prev) => ({ ...prev, staffName: e.target.value }))}
-        />
+        <span className="field-label">スタッフ名（複数選択可）</span>
+        <div className="chip-row">
+          {staffOptions.length === 0 ? (
+            <span className="empty-state">スタッフ一覧を読み込み中…</span>
+          ) : (
+            staffOptions.map((name) => (
+              <button
+                key={name}
+                type="button"
+                className={`chip ${form.staffNames.includes(name) ? 'selected' : ''}`}
+                onClick={() => toggleStaff(name)}
+              >
+                {name}
+              </button>
+            ))
+          )}
+        </div>
       </div>
 
       <div className="field">

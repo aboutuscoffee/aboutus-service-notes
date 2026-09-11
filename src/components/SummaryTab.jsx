@@ -59,13 +59,15 @@ export default function SummaryTab({ refreshKey }) {
 
   const staffMap = new Map();
   for (const row of rows) {
-    const key = row.staff_name || '（未入力）';
-    if (!staffMap.has(key)) {
-      staffMap.set(key, { count: 0, positive: 0 });
+    const names = row.staff_names?.length ? row.staff_names : ['（未入力）'];
+    for (const key of names) {
+      if (!staffMap.has(key)) {
+        staffMap.set(key, { count: 0, positive: 0 });
+      }
+      const entry = staffMap.get(key);
+      entry.count += 1;
+      if (isPositive(row.reaction)) entry.positive += 1;
     }
-    const entry = staffMap.get(key);
-    entry.count += 1;
-    if (isPositive(row.reaction)) entry.positive += 1;
   }
   const staffStats = Array.from(staffMap.entries())
     .map(([name, stats]) => ({
@@ -129,7 +131,7 @@ export default function SummaryTab({ refreshKey }) {
               <div className="activity-main">
                 <span className="activity-time">{formatTime(row.created_at)}</span>
                 <span className="activity-staff-products">
-                  {row.staff_name || '（未入力）'}
+                  {row.staff_names?.length ? row.staff_names.join('・') : '（未入力）'}
                   {row.products?.length ? ` ・ ${row.products.join('・')}` : ''}
                 </span>
               </div>

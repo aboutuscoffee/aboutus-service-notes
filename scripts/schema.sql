@@ -1,6 +1,6 @@
 create table if not exists service_notes (
   id uuid primary key default gen_random_uuid(),
-  staff_name text not null,
+  staff_names text[] not null default '{}',
   record_type text not null check (record_type in ('operation', 'roleplay')),
   products text[] not null default '{}',
   region text check (region in ('国内', '欧米系', 'アジア系', 'その他海外')),
