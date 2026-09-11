@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
-const PRODUCT_OPTIONS = ['ドリップ増量', '豆の量り売り', '焼き菓子', 'ギフトセット', 'その他'];
+const PRODUCT_OPTIONS = ['ドリップ', '豆売り', '物販', 'その他'];
 const REGION_OPTIONS = ['国内', '欧米系', 'アジア系', 'その他海外'];
 const GENDER_OPTIONS = ['男性', '女性', '未回答'];
 const AGE_OPTIONS = ['〜20代', '30〜40代', '50代〜'];
