@@ -8,7 +8,8 @@ create table if not exists service_notes (
   age_group text check (age_group in ('〜20代', '30〜40代', '50代〜')),
   reaction text not null check (reaction in ('即決', '検討→購入', '見送り', '反応なし')),
   note text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 alter table service_notes enable row level security;

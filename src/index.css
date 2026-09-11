@@ -13,6 +13,7 @@
   --pine-text: #24402e;
   --ochre: #b7791f;
   --ochre-soft: #f6e7c8;
+  --clay: #a84a34;
   --gray-chip: #e5e1d5;
   --gray-chip-text: #7a705f;
 }
@@ -299,6 +300,66 @@ body {
   padding: 9px 0;
   border-bottom: 1px solid var(--line);
   font-size: 0.8rem;
+}
+
+.activity-row-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 8px;
+}
+
+.activity-row-btn:hover {
+  background: var(--paper);
+}
+
+.editor-card {
+  margin-bottom: 10px;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.editor-save-btn {
+  flex: 1;
+  margin-top: 0;
+  min-width: 120px;
+}
+
+.ghost-btn {
+  padding: 10px 14px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--paper-raised);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger-btn {
+  padding: 10px 14px;
+  border-radius: 11px;
+  border: 1px solid var(--clay, #a84a34);
+  background: var(--paper-raised);
+  color: var(--clay, #a84a34);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirm-text {
+  font-size: 0.8rem;
+  color: var(--clay, #a84a34);
+  font-weight: 600;
 }
 
 .activity-row:last-child {

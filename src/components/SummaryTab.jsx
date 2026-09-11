@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
+import RecordEditor from './RecordEditor.jsx';
 
 const POSITIVE_REACTIONS = new Set(['即決', '検討→購入']);
 
@@ -20,6 +21,8 @@ export default function SummaryTab({ refreshKey }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [localRefreshKey, setLocalRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,7 +50,9 @@ export default function SummaryTab({ refreshKey }) {
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [refreshKey, localRefreshKey]);
+
+  const reload = () => setLocalRefreshKey((k) => k + 1);
 
   const now = Date.now();
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
@@ -122,24 +127,48 @@ export default function SummaryTab({ refreshKey }) {
       </div>
 
       <div className="card">
-        <p className="section-title">最近の記録</p>
+        <p className="section-title">最近の記録（タップで編集）</p>
         {recentActivity.length === 0 ? (
           <div className="empty-state">まだ記録がありません</div>
         ) : (
-          recentActivity.map((row) => (
-            <div className="activity-row" key={row.id}>
-              <div className="activity-main">
-                <span className="activity-time">{formatTime(row.created_at)}</span>
-                <span className="activity-staff-products">
-                  {row.staff_names?.length ? row.staff_names.join('・') : '（未入力）'}
-                  {row.products?.length ? ` ・ ${row.products.join('・')}` : ''}
+          recentActivity.map((row) =>
+            editingId === row.id ? (
+              <RecordEditor
+                key={row.id}
+                row={row}
+                onCancel={() => setEditingId(null)}
+                onSaved={() => {
+                  setEditingId(null);
+                  reload();
+                }}
+                onDeleted={() => {
+                  setEditingId(null);
+                  reload();
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="activity-row activity-row-btn"
+                key={row.id}
+                onClick={() => setEditingId(row.id)}
+              >
+                <div className="activity-main">
+                  <span className="activity-time">
+                    {formatTime(row.created_at)}
+                    {row.updated_at && row.updated_at !== row.created_at ? '（更新済み）' : ''}
+                  </span>
+                  <span className="activity-staff-products">
+                    {row.staff_names?.length ? row.staff_names.join('・') : '（未入力）'}
+                    {row.products?.length ? ` ・ ${row.products.join('・')}` : ''}
+                  </span>
+                </div>
+                <span className={`badge ${isPositive(row.reaction) ? 'positive' : 'neutral'}`}>
+                  {row.reaction}
                 </span>
-              </div>
-              <span className={`badge ${isPositive(row.reaction) ? 'positive' : 'neutral'}`}>
-                {row.reaction}
-              </span>
-            </div>
-          ))
+              </button>
+            )
+          )
         )}
       </div>
     </>

@@ -9,33 +9,24 @@ import {
   REACTION_OPTIONS,
   RECORD_TYPE_LABELS,
   RECORD_TYPE_MAP,
+  RECORD_TYPE_LABEL_BY_VALUE,
 } from '../lib/options.js';
 
-const initialState = {
-  staffNames: [],
-  recordTypeLabel: 'オペレーション',
-  products: [],
-  region: null,
-  gender: null,
-  ageGroup: null,
-  reaction: null,
-  note: '',
-};
-
-export default function RecordTab({ onSaved }) {
-  const [form, setForm] = useState(initialState);
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState('');
+export default function RecordEditor({ row, onCancel, onSaved, onDeleted }) {
   const staffOptions = useStaffOptions();
-
-  const toggleProduct = (product) => {
-    setForm((prev) => ({
-      ...prev,
-      products: prev.products.includes(product)
-        ? prev.products.filter((p) => p !== product)
-        : [...prev.products, product],
-    }));
-  };
+  const [form, setForm] = useState({
+    staffNames: row.staff_names ?? [],
+    recordTypeLabel: RECORD_TYPE_LABEL_BY_VALUE[row.record_type] ?? 'オペレーション',
+    products: row.products ?? [],
+    region: row.region,
+    gender: row.gender,
+    ageGroup: row.age_group,
+    reaction: row.reaction,
+    note: row.note ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const toggleStaff = (name) => {
     setForm((prev) => ({
@@ -46,60 +37,76 @@ export default function RecordTab({ onSaved }) {
     }));
   };
 
+  const toggleProduct = (product) => {
+    setForm((prev) => ({
+      ...prev,
+      products: prev.products.includes(product)
+        ? prev.products.filter((p) => p !== product)
+        : [...prev.products, product],
+    }));
+  };
+
   const setSingle = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: prev[key] === value ? prev[key] : value }));
   };
 
-  const canSubmit = form.staffNames.length > 0 && form.reaction && !saving;
+  const canSave = form.staffNames.length > 0 && form.reaction && !saving;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!canSubmit) return;
-
+  const handleSave = async () => {
+    if (!canSave) return;
     setSaving(true);
-    const { error } = await supabase.from('service_notes').insert({
-      staff_names: form.staffNames,
-      record_type: RECORD_TYPE_MAP[form.recordTypeLabel],
-      products: form.products,
-      region: form.region,
-      gender: form.gender,
-      age_group: form.ageGroup,
-      reaction: form.reaction,
-      note: form.note.trim() ? form.note.trim() : null,
-    });
+    setErrorMsg('');
+    const { error } = await supabase
+      .from('service_notes')
+      .update({
+        staff_names: form.staffNames,
+        record_type: RECORD_TYPE_MAP[form.recordTypeLabel],
+        products: form.products,
+        region: form.region,
+        gender: form.gender,
+        age_group: form.ageGroup,
+        reaction: form.reaction,
+        note: form.note.trim() ? form.note.trim() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', row.id);
     setSaving(false);
 
     if (error) {
-      setToast('保存に失敗しました');
-      setTimeout(() => setToast(''), 2500);
+      setErrorMsg('更新に失敗しました');
       return;
     }
-
-    setForm(initialState);
-    setToast('記録しました');
     onSaved?.();
-    setTimeout(() => setToast(''), 2000);
+  };
+
+  const handleDelete = async () => {
+    setSaving(true);
+    setErrorMsg('');
+    const { error } = await supabase.from('service_notes').delete().eq('id', row.id);
+    setSaving(false);
+
+    if (error) {
+      setErrorMsg('削除に失敗しました');
+      return;
+    }
+    onDeleted?.();
   };
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
+    <div className="card editor-card">
       <div className="field">
         <span className="field-label">スタッフ名（複数選択可）</span>
         <div className="chip-row">
-          {staffOptions.length === 0 ? (
-            <span className="empty-state">スタッフ一覧を読み込み中…</span>
-          ) : (
-            staffOptions.map((name) => (
-              <button
-                key={name}
-                type="button"
-                className={`chip ${form.staffNames.includes(name) ? 'selected' : ''}`}
-                onClick={() => toggleStaff(name)}
-              >
-                {name}
-              </button>
-            ))
-          )}
+          {staffOptions.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className={`chip ${form.staffNames.includes(name) ? 'selected' : ''}`}
+              onClick={() => toggleStaff(name)}
+            >
+              {name}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -204,22 +211,52 @@ export default function RecordTab({ onSaved }) {
       </div>
 
       <div className="field">
-        <label className="field-label" htmlFor="note">
+        <label className="field-label" htmlFor={`note-${row.id}`}>
           気づき・フリースペース（任意）
         </label>
         <textarea
-          id="note"
+          id={`note-${row.id}`}
           className="textarea-input"
-          placeholder="気づいたことを自由にメモ"
           value={form.note}
           onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
         />
       </div>
 
-      <button type="submit" className="submit-btn" disabled={!canSubmit}>
-        記録する
-      </button>
-      <div className="toast-line">{toast}</div>
-    </form>
+      {errorMsg && <div className="toast-line">{errorMsg}</div>}
+
+      <div className="editor-actions">
+        <button type="button" className="ghost-btn" onClick={onCancel} disabled={saving}>
+          キャンセル
+        </button>
+        {confirmingDelete ? (
+          <>
+            <span className="confirm-text">本当に削除しますか？</span>
+            <button type="button" className="danger-btn" onClick={handleDelete} disabled={saving}>
+              削除する
+            </button>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => setConfirmingDelete(false)}
+              disabled={saving}
+            >
+              やめる
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => setConfirmingDelete(true)}
+            disabled={saving}
+          >
+            削除
+          </button>
+        )}
+        <button type="button" className="submit-btn editor-save-btn" onClick={handleSave} disabled={!canSave}>
+          更新する
+        </button>
+      </div>
+    </div>
   );
 }
