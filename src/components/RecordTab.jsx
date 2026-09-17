@@ -15,6 +15,7 @@ const initialState = {
   staffNames: [],
   recordTypeLabel: 'オペレーション',
   products: [],
+  productOther: '',
   region: null,
   gender: null,
   ageGroup: null,
@@ -57,10 +58,13 @@ export default function RecordTab({ onSaved }) {
     if (!canSubmit) return;
 
     setSaving(true);
+    const products = form.products.map((p) =>
+      p === 'その他' && form.productOther.trim() ? `その他：${form.productOther.trim()}` : p
+    );
     const { error } = await supabase.from('service_notes').insert({
       staff_names: form.staffNames,
       record_type: RECORD_TYPE_MAP[form.recordTypeLabel],
-      products: form.products,
+      products,
       region: form.region,
       gender: form.gender,
       age_group: form.ageGroup,
@@ -133,6 +137,15 @@ export default function RecordTab({ onSaved }) {
             </button>
           ))}
         </div>
+        {form.products.includes('その他') && (
+          <input
+            className="text-input"
+            type="text"
+            placeholder="その他の内容を入力"
+            value={form.productOther}
+            onChange={(e) => setForm((prev) => ({ ...prev, productOther: e.target.value }))}
+          />
+        )}
       </div>
 
       <div className="field">

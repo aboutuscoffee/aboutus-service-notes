@@ -14,10 +14,12 @@ import {
 
 export default function RecordEditor({ row, onCancel, onSaved, onDeleted }) {
   const staffOptions = useStaffOptions();
+  const existingOther = (row.products ?? []).find((p) => p.startsWith('その他：'));
   const [form, setForm] = useState({
     staffNames: row.staff_names ?? [],
     recordTypeLabel: RECORD_TYPE_LABEL_BY_VALUE[row.record_type] ?? 'オペレーション',
-    products: row.products ?? [],
+    products: (row.products ?? []).map((p) => (p.startsWith('その他：') ? 'その他' : p)),
+    productOther: existingOther ? existingOther.slice('その他：'.length) : '',
     region: row.region,
     gender: row.gender,
     ageGroup: row.age_group,
@@ -56,12 +58,15 @@ export default function RecordEditor({ row, onCancel, onSaved, onDeleted }) {
     if (!canSave) return;
     setSaving(true);
     setErrorMsg('');
+    const products = form.products.map((p) =>
+      p === 'その他' && form.productOther.trim() ? `その他：${form.productOther.trim()}` : p
+    );
     const { error } = await supabase
       .from('service_notes')
       .update({
         staff_names: form.staffNames,
         record_type: RECORD_TYPE_MAP[form.recordTypeLabel],
-        products: form.products,
+        products,
         region: form.region,
         gender: form.gender,
         age_group: form.ageGroup,
@@ -140,6 +145,15 @@ export default function RecordEditor({ row, onCancel, onSaved, onDeleted }) {
             </button>
           ))}
         </div>
+        {form.products.includes('その他') && (
+          <input
+            className="text-input"
+            type="text"
+            placeholder="その他の内容を入力"
+            value={form.productOther}
+            onChange={(e) => setForm((prev) => ({ ...prev, productOther: e.target.value }))}
+          />
+        )}
       </div>
 
       <div className="field">
