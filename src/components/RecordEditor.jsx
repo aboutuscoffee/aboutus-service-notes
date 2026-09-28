@@ -78,7 +78,7 @@ export default function RecordEditor({ row, onCancel, onSaved, onDeleted }) {
     setSaving(false);
 
     if (error) {
-      setErrorMsg('更新に失敗しました');
+      setErrorMsg(`更新に失敗しました：${error.message || '不明なエラー'}`);
       return;
     }
     onSaved?.();
@@ -91,7 +91,7 @@ export default function RecordEditor({ row, onCancel, onSaved, onDeleted }) {
     setSaving(false);
 
     if (error) {
-      setErrorMsg('削除に失敗しました');
+      setErrorMsg(`削除に失敗しました：${error.message || '不明なエラー'}`);
       return;
     }
     onDeleted?.();
@@ -236,7 +236,7 @@ export default function RecordEditor({ row, onCancel, onSaved, onDeleted }) {
         />
       </div>
 
-      {errorMsg && <div className="toast-line">{errorMsg}</div>}
+      {errorMsg && <div className="toast-line error">{errorMsg}</div>}
 
       <div className="editor-actions">
         <button type="button" className="ghost-btn" onClick={onCancel} disabled={saving}>

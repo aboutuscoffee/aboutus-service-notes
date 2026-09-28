@@ -219,6 +219,11 @@ body {
   font-weight: 600;
   margin-top: 10px;
   min-height: 1.1em;
+  word-break: break-word;
+}
+
+.toast-line.error {
+  color: var(--clay);
 }
 
 .summary-tiles {

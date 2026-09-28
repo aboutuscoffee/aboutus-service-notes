@@ -27,6 +27,7 @@ export default function RecordTab({ onSaved }) {
   const [form, setForm] = useState(initialState);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+  const [toastIsError, setToastIsError] = useState(false);
   const staffOptions = useStaffOptions();
 
   const toggleProduct = (product) => {
@@ -74,12 +75,14 @@ export default function RecordTab({ onSaved }) {
     setSaving(false);
 
     if (error) {
-      setToast('保存に失敗しました');
-      setTimeout(() => setToast(''), 2500);
+      setToastIsError(true);
+      setToast(`保存に失敗しました：${error.message || '不明なエラー'}`);
+      setTimeout(() => setToast(''), 6000);
       return;
     }
 
     setForm(initialState);
+    setToastIsError(false);
     setToast('記録しました');
     onSaved?.();
     setTimeout(() => setToast(''), 2000);
@@ -232,7 +235,7 @@ export default function RecordTab({ onSaved }) {
       <button type="submit" className="submit-btn" disabled={!canSubmit}>
         記録する
       </button>
-      <div className="toast-line">{toast}</div>
+      <div className={`toast-line ${toastIsError ? 'error' : ''}`}>{toast}</div>
     </form>
   );
 }
