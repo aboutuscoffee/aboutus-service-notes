@@ -37,7 +37,7 @@ export default function SummaryTab({ refreshKey }) {
       if (cancelled) return;
 
       if (error) {
-        setErrorMsg('データの取得に失敗しました');
+        setErrorMsg(`データの取得に失敗しました：${error.message || '不明なエラー'}`);
         setRows([]);
       } else {
         setErrorMsg('');
@@ -89,7 +89,14 @@ export default function SummaryTab({ refreshKey }) {
   }
 
   if (errorMsg) {
-    return <div className="card empty-state">{errorMsg}</div>;
+    return (
+      <div className="card empty-state">
+        <p>{errorMsg}</p>
+        <button type="button" className="ghost-btn" onClick={reload} style={{ marginTop: 10 }}>
+          再読み込み
+        </button>
+      </div>
+    );
   }
 
   return (
